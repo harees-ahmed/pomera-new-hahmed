@@ -8,6 +8,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { crmDatabase, type Company, type DimensionValue } from '@/lib/supabase-crm';
 import { toast } from 'react-hot-toast';
+import SupabaseDebug from '@/components/SupabaseDebug';
 
 export default function CRMPage() {
   const [activeTab, setActiveTab] = useState('leads');
@@ -48,7 +49,7 @@ export default function CRMPage() {
   });
 
   // Form state with ALL original fields
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<Partial<Company>>({
     // Company Info
     company_name: '',
     industry: '',
@@ -104,6 +105,16 @@ export default function CRMPage() {
 
   const loadDimensions = async () => {
     try {
+      // First check the connection
+      const connectionCheck = await crmDatabase.checkConnection();
+      if (connectionCheck.error) {
+        console.error('Database connection error:', connectionCheck.error);
+        toast.error(`Database connection failed: ${connectionCheck.error}`);
+        return;
+      }
+
+      console.log('Database connection successful, loading dimensions...');
+
       const [statuses, sources, scores, sizes, revenues, positionTypes, noteTypes, contactMethods, fileCategories] = 
         await Promise.all([
           crmDatabase.getCompanyStatuses(),
@@ -116,6 +127,18 @@ export default function CRMPage() {
           crmDatabase.getContactMethods(),
           crmDatabase.getFileCategories()
         ]);
+
+      console.log('All dimensions loaded:', {
+        statuses: statuses.data || [],
+        sources: sources.data || [],
+        scores: scores.data || [],
+        sizes: sizes.data || [],
+        revenues: revenues.data || [],
+        positionTypes: positionTypes.data || [],
+        noteTypes: noteTypes.data || [],
+        contactMethods: contactMethods.data || [],
+        fileCategories: fileCategories.data || []
+      });
 
       setDimensions({
         statuses: statuses.data || [],
@@ -130,6 +153,7 @@ export default function CRMPage() {
       });
     } catch (error) {
       console.error('Error loading dimensions:', error);
+      toast.error('Failed to load dimension data');
     }
   };
 
@@ -365,6 +389,9 @@ export default function CRMPage() {
           <h1 className="text-3xl font-bold text-gray-900">CRM Dashboard</h1>
           <p className="text-gray-600 mt-2">Manage your leads, prospects, and clients</p>
         </div>
+
+        {/* Debug Component - Remove this after fixing the issue */}
+        <SupabaseDebug />
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
