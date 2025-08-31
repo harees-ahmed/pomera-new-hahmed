@@ -119,204 +119,67 @@ async function withErrorHandling<T>(
 }
 
 class CRMDatabase {
-  // ==================== CONNECTION CHECK ====================
-  
-  async checkConnection() {
-    if (!supabase) {
-      return { error: 'Supabase client is not initialized. Please check your environment variables.' };
-    }
-    
-    try {
-      // Try a simple query to test the connection
-      const { data, error } = await supabase.from('companies').select('count').limit(1);
-      if (error) {
-        return { error: `Database connection failed: ${error.message}` };
-      }
-      return { success: true, message: 'Database connection successful' };
-    } catch (err: any) {
-      return { error: `Connection test failed: ${err.message}` };
-    }
-  }
-
   // ==================== DIMENSION MANAGEMENT ====================
   
-  // Generic dimension fetcher with proper field mapping
-  private async getDimensionData(tableName: string, idField: string, nameField: string, colorField?: string) {
+  async getDimensions(tableName: string) {
     return withErrorHandling(async () => {
-      // Check if supabase client is available
-      if (!supabase) {
-        throw new Error('Supabase client is not initialized. Please check your environment variables.');
-      }
-
-      console.log(`Fetching dimensions from ${tableName} with fields: ${idField}, ${nameField}`);
-      
       const { data, error } = await supabase
         .from(tableName)
         .select('*')
         .eq('is_active', true)
         .order('display_order');
       
-      if (error) {
-        console.error(`Supabase error for ${tableName}:`, error);
-        throw error;
-      }
+      if (error) throw error;
       
-      console.log(`Raw data from ${tableName}:`, data);
-      
-      const mappedData = (data || []).map((item: any) => ({
-        id: item[idField],
-        name: item[nameField],
-        display_order: item.display_order || 0,
-        is_active: item.is_active || true,
-        color: colorField ? item[colorField] : undefined
+      // Map to consistent format
+      return (data || []).map(item => ({
+        id: item.status_id || item.source_id || item.score_id || item.size_id || 
+            item.revenue_id || item.position_type_id || item.note_type_id || 
+            item.method_id || item.category_id,
+        name: item.status_name || item.source_name || item.score_name || 
+              item.size_name || item.revenue_range || item.position_type_name || 
+              item.note_type_name || item.method_name || item.category_name,
+        display_order: item.display_order,
+        is_active: item.is_active,
+        color: item.score_color || item.color
       })) as DimensionValue[];
-      
-      console.log(`Mapped data from ${tableName}:`, mappedData);
-      
-      return mappedData;
-    }, `Failed to fetch ${tableName}`);
+    }, 'Failed to fetch dimensions');
   }
 
   async getCompanyStatuses() {
-    try {
-      return await this.getDimensionData('dim_company_status', 'status_id', 'status_name');
-    } catch (error) {
-      console.warn('Falling back to default company statuses');
-      return {
-        data: [
-          { id: 1, name: 'lead', display_order: 1, is_active: true },
-          { id: 2, name: 'prospect', display_order: 2, is_active: true },
-          { id: 3, name: 'client', display_order: 3, is_active: true },
-          { id: 4, name: 'inactive', display_order: 4, is_active: true }
-        ]
-      };
-    }
+    return this.getDimensions('dim_company_status');
   }
 
   async getLeadSources() {
-    try {
-      return await this.getDimensionData('dim_lead_source', 'source_id', 'source_name');
-    } catch (error) {
-      console.warn('Falling back to default lead sources');
-      return {
-        data: [
-          { id: 1, name: 'Website', display_order: 1, is_active: true },
-          { id: 2, name: 'Referral', display_order: 2, is_active: true },
-          { id: 3, name: 'Cold Call', display_order: 3, is_active: true },
-          { id: 4, name: 'Trade Show', display_order: 4, is_active: true }
-        ]
-      };
-    }
+    return this.getDimensions('dim_lead_source');
   }
 
   async getLeadScores() {
-    try {
-      return await this.getDimensionData('dim_lead_score', 'score_id', 'score_name', 'score_color');
-    } catch (error) {
-      console.warn('Falling back to default lead scores');
-      return {
-        data: [
-          { id: 1, name: 'hot', display_order: 1, is_active: true, color: 'red' },
-          { id: 2, name: 'warm', display_order: 2, is_active: true, color: 'orange' },
-          { id: 3, name: 'cold', display_order: 3, is_active: true, color: 'blue' }
-        ]
-      };
-    }
+    return this.getDimensions('dim_lead_score');
   }
 
   async getCompanySizes() {
-    try {
-      return await this.getDimensionData('dim_company_size', 'size_id', 'size_name');
-    } catch (error) {
-      console.warn('Falling back to default company sizes');
-      return {
-        data: [
-          { id: 1, name: '1-10 employees', display_order: 1, is_active: true },
-          { id: 2, name: '11-50 employees', display_order: 2, is_active: true },
-          { id: 3, name: '51-200 employees', display_order: 3, is_active: true },
-          { id: 4, name: '200+ employees', display_order: 4, is_active: true }
-        ]
-      };
-    }
+    return this.getDimensions('dim_company_size');
   }
 
   async getAnnualRevenues() {
-    try {
-      return await this.getDimensionData('dim_annual_revenue', 'revenue_id', 'revenue_range');
-    } catch (error) {
-      console.warn('Falling back to default annual revenues');
-      return {
-        data: [
-          { id: 1, name: 'Under $1M', display_order: 1, is_active: true },
-          { id: 2, name: '$1M - $10M', display_order: 2, is_active: true },
-          { id: 3, name: '$10M - $100M', display_order: 3, is_active: true },
-          { id: 4, name: 'Over $100M', display_order: 4, is_active: true }
-        ]
-      };
-    }
+    return this.getDimensions('dim_annual_revenue');
   }
 
   async getPositionTypes() {
-    try {
-      return await this.getDimensionData('dim_position_type', 'position_type_id', 'position_type_name');
-    } catch (error) {
-      console.warn('Falling back to default position types');
-      return {
-        data: [
-          { id: 1, name: 'Nurse', display_order: 1, is_active: true },
-          { id: 2, name: 'Physician', display_order: 2, is_active: true },
-          { id: 3, name: 'Technician', display_order: 3, is_active: true },
-          { id: 4, name: 'Administrative', display_order: 4, is_active: true }
-        ]
-      };
-    }
+    return this.getDimensions('dim_position_type');
   }
 
   async getNoteTypes() {
-    try {
-      return await this.getDimensionData('dim_note_type', 'note_type_id', 'note_type_name');
-    } catch (error) {
-      console.warn('Falling back to default note types');
-      return {
-        data: [
-          { id: 1, name: 'Call', display_order: 1, is_active: true },
-          { id: 2, name: 'Email', display_order: 2, is_active: true },
-          { id: 3, name: 'Meeting', display_order: 3, is_active: true },
-          { id: 4, name: 'Follow-up', display_order: 4, is_active: true }
-        ]
-      };
-    }
+    return this.getDimensions('dim_note_type');
   }
 
   async getContactMethods() {
-    try {
-      return await this.getDimensionData('dim_contact_method', 'method_id', 'method_name');
-    } catch (error) {
-      console.warn('Falling back to default contact methods');
-      return {
-        data: [
-          { id: 1, name: 'Email', display_order: 1, is_active: true },
-          { id: 2, name: 'Phone', display_order: 2, is_active: true },
-          { id: 3, name: 'Mobile', display_order: 3, is_active: true }
-        ]
-      };
-    }
+    return this.getDimensions('dim_contact_method');
   }
 
   async getFileCategories() {
-    try {
-      return await this.getDimensionData('dim_file_category', 'category_id', 'category_name');
-    } catch (error) {
-      console.warn('Falling back to default file categories');
-      return {
-        data: [
-          { id: 1, name: 'Contract', display_order: 1, is_active: true },
-          { id: 2, name: 'Proposal', display_order: 2, is_active: true },
-          { id: 3, name: 'Invoice', display_order: 3, is_active: true },
-          { id: 4, name: 'Other', display_order: 4, is_active: true }
-        ]
-      };
-    }
+    return this.getDimensions('dim_file_category');
   }
 
   // ==================== COMPANIES ====================
@@ -583,7 +446,7 @@ class CRMDatabase {
         totalOpportunityValue: 0
       };
 
-      companies?.forEach((company: any) => {
+      companies?.forEach(company => {
         switch (company.company_status) {
           case 'lead':
             stats.totalLeads++;

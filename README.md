@@ -1,178 +1,36 @@
-# Pomera Care LLC - Medical Staffing Platform
-
-A modern, responsive web application for medical staffing services built with Next.js, TypeScript, and Tailwind CSS.
-
-## Features
-
-- **Healthcare Professional Portal**: Job search and application system
-- **Client Portal**: Healthcare facility management and staffing requests
-- **CRM System**: Lead management and business development tools
-- **Admin Dashboard**: Comprehensive system administration
-- **Responsive Design**: Mobile-first approach with modern UI/UX
-
-## Tech Stack
-
-- **Frontend**: Next.js 15, React 19, TypeScript
-- **Styling**: Tailwind CSS, CSS Modules
-- **UI Components**: Radix UI, Lucide React Icons
-- **State Management**: Zustand
-- **Database**: Supabase (PostgreSQL)
-- **Authentication**: Supabase Auth
-- **Deployment**: GitHub Pages (Static Export)
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
 
-### Prerequisites
+First, run the development server:
 
-- Node.js 18+ 
-- npm or yarn
-- Git
-
-### Installation
-
-1. Clone the repository:
-```bash
-git clone https://github.com/yourusername/pomera-new-hahmed.git
-cd pomera-new-hahmed
-```
-
-2. Install dependencies:
-```bash
-npm install
-```
-
-3. Set up environment variables:
-Create a `.env.local` file in the root directory:
-```env
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-```
-
-4. Run the development server:
 ```bash
 npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-## Building for Production
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-### Local Build
-```bash
-npm run build
-```
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-This creates a static export in the `out/` directory.
+## Learn More
 
-### Static Export (for GitHub Pages)
-```bash
-npm run build:static
-```
+To learn more about Next.js, take a look at the following resources:
 
-## Deployment to GitHub Pages
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-### Automatic Deployment (Recommended)
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-1. **Enable GitHub Pages**:
-   - Go to your repository settings
-   - Navigate to "Pages" section
-   - Set source to "GitHub Actions"
+## Deploy on Vercel
 
-2. **Push to Main Branch**:
-   The GitHub Actions workflow will automatically:
-   - Build the project
-   - Deploy to GitHub Pages
-   - Update on every push to main branch
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
-### Manual Deployment
-
-1. **Build the project**:
-   ```bash
-   npm run build
-   ```
-
-2. **Deploy to GitHub Pages**:
-   - The static files are in the `out/` directory
-   - Upload these files to your GitHub Pages branch
-   - Or use the GitHub CLI: `gh pages --dist out`
-
-### GitHub Actions Workflow
-
-The project includes a `.github/workflows/deploy.yml` file that:
-- Triggers on pushes to main branch
-- Builds the Next.js application
-- Exports static files
-- Deploys to GitHub Pages automatically
-
-## Project Structure
-
-```
-pomera-new-hahmed/
-├── app/                    # Next.js app directory
-│   ├── admin/             # Admin dashboard
-│   ├── crm/               # CRM system
-│   ├── portal/            # Client/Professional portals
-│   └── page.tsx           # Home page
-├── components/             # Reusable UI components
-│   ├── ui/                # Base UI components
-│   └── ...                # Feature-specific components
-├── lib/                    # Utility functions and configurations
-├── database/               # Database schemas and migrations
-├── public/                 # Static assets
-└── out/                    # Static export (generated)
-```
-
-## Configuration
-
-### Next.js Configuration
-
-The project is configured for static export in `next.config.ts`:
-- `output: 'export'` - Enables static export
-- `trailingSlash: true` - Required for GitHub Pages
-- `images: { unoptimized: true }` - Required for static export
-- `basePath` - Set to repository name for GitHub Pages
-
-### Environment Variables
-
-Required environment variables:
-- `NEXT_PUBLIC_SUPABASE_URL`: Your Supabase project URL
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Your Supabase anonymous key
-
-## Available Scripts
-
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run build:static` - Build static export
-- `npm run start` - Start production server
-- `npm run lint` - Run ESLint
-- `npm run deploy` - Build and prepare for deployment
-
-## Troubleshooting
-
-### Build Issues
-
-1. **TypeScript Errors**: Ensure all dependencies are installed
-2. **ESLint Errors**: Check the ESLint configuration
-3. **Missing Components**: Verify all UI components are properly exported
-
-### Deployment Issues
-
-1. **404 Errors**: Ensure `basePath` is correctly set in `next.config.ts`
-2. **Static Export Fails**: Check that all pages are compatible with static export
-3. **GitHub Actions Fail**: Verify workflow file permissions and repository settings
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
-
-## License
-
-This project is proprietary software for Pomera Care LLC.
-
-## Support
-
-For support and questions, please contact the development team or create an issue in the repository.
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.

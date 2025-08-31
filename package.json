@@ -5,10 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "build:static": "next build && next export",
     "start": "next start",
-    "lint": "next lint",
-    "deploy": "npm run build && echo 'Build complete! Static files are in the out/ directory.'"
+    "lint": "next lint"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.3",
