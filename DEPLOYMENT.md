@@ -135,3 +135,63 @@ After successful deployment:
 2. Configure analytics
 3. Set up monitoring
 4. Plan for scaling
+## Step 4: Monitor Deployment
+
+The GitHub Actions workflow will:
+1. Build your Next.js application
+2. Export static files
+3. Deploy to GitHub Pages
+
+You can monitor the progress in the Actions tab of your repository.
+
+## Step 5: Access Your Site
+
+Once deployment is complete, your site will be available at:
+https://[username].github.io/pomera-new-hahmed
+
+## Configuration Details
+
+### Next.js Configuration
+The project is configured for static export in 
+ext.config.ts:
+- output: 'export' - Enables static export
+- 	railingSlash: true - Required for GitHub Pages
+- asePath: '/pomera-new-hahmed' - Matches repository name
+- images: { unoptimized: true } - Required for static export
+
+### Build Process
+The build process creates a static out/ directory containing:
+- HTML files for each page
+- JavaScript bundles
+- CSS files
+- Static assets
+
+### GitHub Actions Workflow
+Located at .github/workflows/deploy.yml, this workflow:
+- Triggers on push to main branch
+- Sets up Node.js 18 environment
+- Installs dependencies
+- Builds the project
+- Deploys to GitHub Pages
+
+## Troubleshooting
+
+### Common Issues
+1. **Build fails**: Check GitHub Actions logs for errors
+2. **Site not accessible**: Ensure GitHub Pages is enabled
+3. **Missing assets**: Verify base path configuration
+4. **Environment variables**: Check if secrets are properly configured
+
+### Local Testing
+Test your build locally before pushing:
+`ash
+npm run build
+npx serve out
+`
+
+## Notes
+
+- This is a static export deployment, so server-side features won't work
+- All Supabase interactions must be client-side only
+- API routes are not available in static export
+- The site will be served from a subdirectory matching your repository name
