@@ -1,19 +1,31 @@
 "use client"
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Menu, X } from 'lucide-react';
 
-const Header = () => {
+const CRMHeader = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const pathname = usePathname();
 
   const navItems = [
-    { label: 'Home', href: '/' },
-    { label: 'Contact Us', href: '/contact' },
-    { label: 'Candidates', href: '/portal/candidate' },
-    { label: 'Employers', href: '/employers' },
-    { label: 'Industry Updates', href: '/industry-updates' },
+    { label: 'Client (CRM)', href: '/crm' },
+    { label: 'ATS', href: '/ats' },
+    { label: 'Pomera Admin', href: '/admin' },
   ];
+
+  // Function to check if a nav item is active
+  const isActive = (href: string) => {
+    if (href === '/crm') {
+      return pathname === '/crm';
+    } else if (href === '/ats') {
+      return pathname === '/ats' || pathname.startsWith('/ats/');
+    } else if (href === '/admin') {
+      return pathname === '/admin' || pathname.startsWith('/admin/');
+    }
+    return false;
+  };
 
   return (
     <header className="bg-background/95 backdrop-blur-sm border-b border-border z-50">
@@ -36,13 +48,17 @@ const Header = () => {
               <a
                 key={item.href}
                 href={item.href}
-                className="text-foreground hover:text-primary transition-colors duration-200 font-medium"
+                className={`py-2 px-4 rounded-lg font-medium text-sm transition-colors duration-200 ${
+                  isActive(item.href)
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-foreground hover:text-primary hover:bg-gray-100'
+                }`}
               >
                 {item.label}
               </a>
             ))}
             <Button variant="outline" className="ml-4">
-              Client Login
+              Logout
             </Button>
           </nav>
 
@@ -66,14 +82,18 @@ const Header = () => {
               <a
                 key={item.href}
                 href={item.href}
-                className="block text-foreground hover:text-primary transition-colors duration-200 font-medium"
+                className={`block py-2 px-4 rounded-lg font-medium text-sm transition-colors duration-200 ${
+                  isActive(item.href)
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-foreground hover:text-primary hover:bg-gray-100'
+                }`}
                 onClick={() => setIsMenuOpen(false)}
               >
                 {item.label}
               </a>
             ))}
             <Button variant="outline" className="w-full mt-4">
-              Client Login
+              Logout
             </Button>
           </div>
         )}
@@ -82,4 +102,4 @@ const Header = () => {
   );
 };
 
-export default Header;
+export default CRMHeader;

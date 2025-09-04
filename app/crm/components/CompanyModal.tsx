@@ -1,10 +1,11 @@
 "use client"
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ChevronDown, ChevronUp, Upload } from 'lucide-react';
-import { type Company, type DimensionValue } from '@/lib/supabase-crm';
+import { ChevronDown, ChevronRight, Upload } from 'lucide-react';
+import CustomTooltip from '@/components/ui/custom-tooltip';
+import { type Company, type DimensionValue, crmDatabase } from '@/lib/supabase-crm';
 import { toast } from 'react-hot-toast';
 import NotesSection from './NotesSection';
 import ContactsSection from './ContactsSection';
@@ -12,10 +13,7 @@ import AddressesSection from './AddressesSection';
 
 interface CompanyModalProps {
   company: Company;
-  isEditMode: boolean;
   onClose: () => void;
-  onEditModeChange: (editMode: boolean) => void;
-  onCompanyUpdate: (company: Company) => void;
   dimensions: {
     statuses: DimensionValue[];
     sources: DimensionValue[];
@@ -29,6 +27,7 @@ interface CompanyModalProps {
     addressTypes: DimensionValue[];
     fileCategories: DimensionValue[];
     industries: DimensionValue[];
+    documentTypes: DimensionValue[];
   };
   notes: any[];
   contacts: any[];
@@ -42,10 +41,7 @@ interface CompanyModalProps {
 
 export default function CompanyModal({
   company,
-  isEditMode,
   onClose,
-  onEditModeChange,
-  onCompanyUpdate,
   dimensions,
   notes,
   contacts,
@@ -56,15 +52,18 @@ export default function CompanyModal({
   onStatusChange,
   saving
 }: CompanyModalProps) {
-  const [editFormData, setEditFormData] = useState<Partial<Company>>(company);
   const [expandedSections, setExpandedSections] = useState<{[key: string]: boolean}>({
-    company: true,
-    opportunity: true,
-    notes: true,
-    contacts: false,
-    addresses: false,
-    uploads: true
+    companyInfo: false,
+    address: false,
+    primaryContact: false,
+    leadData: false,
+    staffingNeeds: false,
+    notes: false,
+    uploads: false
   });
+  const [showNotesModal, setShowNotesModal] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [selectedDocType, setSelectedDocType] = useState('');
 
   const toggleSection = (section: string) => {
     setExpandedSections(prev => ({
@@ -73,49 +72,13 @@ export default function CompanyModal({
     }));
   };
 
-  const handleEditInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value, type } = e.target;
-    
-    setEditFormData(prev => ({
-      ...prev,
-      [name]: type === 'number' ? (value === '' ? 0 : Number(value)) : value
-    }));
-  };
-
-  const formatCurrency = (amount: number): string => {
+  const formatCurrency = (value: number): string => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
       minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
-
-  const handleSave = async () => {
-    try {
-      // Validate zip code if provided
-      if (editFormData.zip_code && !/^\d{5}(-\d{4})?$/.test(editFormData.zip_code)) {
-        toast.error('Please enter a proper Zip code in format XXXXX or XXXXX-XXXX');
-        return;
-      }
-      
-      // Format the website URL if provided
-      const updateData = {
-        ...editFormData,
-        company_website: editFormData.company_website ? 
-          (editFormData.company_website.match(/^https?:\/\//) ? 
-            editFormData.company_website : 
-            `https://${editFormData.company_website}`) : 
-          editFormData.company_website
-      };
-      
-      // For now, just update local state
-      onCompanyUpdate({ ...company, ...updateData });
-      onEditModeChange(false);
-      toast.success('Company updated successfully');
-    } catch (error) {
-      toast.error('Failed to update company');
-    }
+      maximumFractionDigits: 0
+    }).format(value);
   };
 
   return (
@@ -125,7 +88,6 @@ export default function CompanyModal({
           <div className="flex justify-between items-start">
             <div>
               <h2 className="text-2xl font-bold">{company.company_name}</h2>
-              <p className="text-gray-600">{company.industry}</p>
               <div className="flex items-center gap-2 mt-2">
                 <span className="text-sm text-gray-500">Status:</span>
                 <select
@@ -140,344 +102,42 @@ export default function CompanyModal({
                 </select>
               </div>
             </div>
+            <div className="flex items-center gap-2">
+              <Button size="sm" onClick={() => setShowNotesModal(true)}>
+                + Add Note/Activity
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => setShowUploadModal(true)}>
+                <Upload className="h-4 w-4 mr-2" />
+                Upload File
+              </Button>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 text-3xl"
+                className="text-gray-400 hover:text-gray-600 text-3xl ml-2"
             >
               ×
             </button>
+            </div>
           </div>
         </div>
         
         <div className="p-6">
-          {/* Company Information Section - COLLAPSIBLE */}
-          <div className="mb-6">
+          {/* Company Information Section */}
+          <div className="mb-6 border rounded-lg">
             <button
-              onClick={() => toggleSection('company')}
-              className="flex items-center justify-between w-full text-left mb-4 p-2 hover:bg-gray-50 rounded"
+              type="button"
+              onClick={() => toggleSection('companyInfo')}
+              className="w-full px-4 py-3 text-left bg-gray-100 hover:bg-gray-200 flex items-center justify-between rounded-t-lg cursor-pointer transition-colors border border-gray-200 hover:border-gray-300"
             >
-              <h3 className="text-lg font-semibold">Company Information</h3>
-              {expandedSections.company ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+              <div className="flex items-center gap-2">
+                <h4 className="font-medium text-gray-900">Company Information</h4>
+                <span className="text-xs text-gray-500">(click to expand/collapse)</span>
+              </div>
+              {expandedSections.companyInfo ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
             </button>
             
-            {expandedSections.company && (
-              <div className="pl-2">
-                {isEditMode ? (
-                  <div className="grid grid-cols-2 gap-4">
-                    {/* Edit mode fields */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
-                      <Input
-                        name="company_name"
-                        value={editFormData.company_name || ''}
-                        onChange={handleEditInputChange}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Industry</label>
-                      <select
-                        name="industry"
-                        value={editFormData.industry || ''}
-                        onChange={handleEditInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                      >
-                        <option value="">Select industry</option>
-                        {dimensions.industries.map(industry => (
-                          <option key={industry.id} value={industry.name}>{industry.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Company Size</label>
-                      <select
-                        name="company_size"
-                        value={editFormData.company_size || ''}
-                        onChange={handleEditInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                      >
-                        <option value="">Select size</option>
-                        {dimensions.sizes.map(size => (
-                          <option key={size.id} value={size.name}>{size.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Annual Revenue</label>
-                      <select
-                        name="annual_revenue"
-                        value={editFormData.annual_revenue || ''}
-                        onChange={handleEditInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                      >
-                        <option value="">Select revenue</option>
-                        {dimensions.revenues.map(rev => (
-                          <option key={rev.id} value={rev.name}>{rev.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Website</label>
-                      <Input
-                        name="company_website"
-                        value={editFormData.company_website || ''}
-                        onChange={handleEditInputChange}
-                        type="text"
-                        placeholder="www.example.com or https://example.com"
-                      />
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Address Type</label>
-                      <select
-                        name="address_type"
-                        value={editFormData.address_type || ''}
-                        onChange={handleEditInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                      >
-                        <option value="">Select address type</option>
-                        {dimensions.addressTypes.map(type => (
-                          <option key={type.id} value={type.name}>{type.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Street Address</label>
-                      <Input
-                        name="street_address"
-                        value={editFormData.street_address || ''}
-                        onChange={handleEditInputChange}
-                        placeholder="123 Main Street"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Apt/Suite</label>
-                      <Input
-                        name="apt_suite"
-                        value={editFormData.apt_suite || ''}
-                        onChange={handleEditInputChange}
-                        placeholder="Apt/Suite"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
-                      <Input
-                        name="city"
-                        value={editFormData.city || ''}
-                        onChange={handleEditInputChange}
-                        placeholder="City"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
-                      <select
-                        name="state"
-                        value={editFormData.state || ''}
-                        onChange={handleEditInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                      >
-                        <option value="">State</option>
-                        {['AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT','VA','WA','WV','WI','WY'].map(state => (
-                          <option key={state} value={state}>{state}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">ZIP Code</label>
-                      <Input
-                        name="zip_code"
-                        value={editFormData.zip_code || ''}
-                        onChange={handleEditInputChange}
-                        placeholder="12345 or 12345-6789"
-                        pattern="[0-9]{5}(-[0-9]{4})?"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Contact First Name</label>
-                      <Input
-                        name="contact_first_name"
-                        value={editFormData.contact_first_name || ''}
-                        onChange={handleEditInputChange}
-                        placeholder="First Name"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Contact Last Name</label>
-                      <Input
-                        name="contact_last_name"
-                        value={editFormData.contact_last_name || ''}
-                        onChange={handleEditInputChange}
-                        placeholder="Last Name"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Job Title</label>
-                      <Input
-                        name="contact_job_title"
-                        value={editFormData.contact_job_title || ''}
-                        onChange={handleEditInputChange}
-                        placeholder="Job Title"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                      <Input
-                        name="contact_email"
-                        value={editFormData.contact_email || ''}
-                        onChange={handleEditInputChange}
-                        type="email"
-                        placeholder="email@company.com"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                      <Input
-                        name="contact_phone"
-                        value={editFormData.contact_phone || ''}
-                        onChange={handleEditInputChange}
-                        placeholder="(555) 123-4567"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Mobile</label>
-                      <Input
-                        name="contact_mobile"
-                        value={editFormData.contact_mobile || ''}
-                        onChange={handleEditInputChange}
-                        placeholder="(555) 123-4567"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Contact Type</label>
-                      <select
-                        name="contact_type"
-                        value={editFormData.contact_type || ''}
-                        onChange={handleEditInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                      >
-                        <option value="">Select contact type</option>
-                        {dimensions.contactTypes.map(type => (
-                          <option key={type.id} value={type.name}>{type.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Preferred Contact Method</label>
-                      <select
-                        name="preferred_contact_method"
-                        value={editFormData.preferred_contact_method || ''}
-                        onChange={handleEditInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                      >
-                        <option value="">Select method</option>
-                        {dimensions.contactMethods.map(method => (
-                          <option key={method.id} value={method.name}>{method.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Lead Source</label>
-                      <select
-                        name="lead_source"
-                        value={editFormData.lead_source || ''}
-                        onChange={handleEditInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                      >
-                        <option value="">Select source</option>
-                        {dimensions.sources.map(source => (
-                          <option key={source.id} value={source.name}>{source.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Lead Score</label>
-                      <select
-                        name="lead_score"
-                        value={editFormData.lead_score || ''}
-                        onChange={handleEditInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                      >
-                        <option value="">Select lead score</option>
-                        {dimensions.scores.map(score => (
-                          <option key={score.id} value={score.name}>{score.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Expected Close Date</label>
-                      <Input
-                        name="expected_close_date"
-                        value={editFormData.expected_close_date || ''}
-                        onChange={handleEditInputChange}
-                        type="date"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Opportunity Value</label>
-                      <Input
-                        name="opportunity_value"
-                        value={editFormData.opportunity_value || ''}
-                        onChange={handleEditInputChange}
-                        type="number"
-                        min="0"
-                      />
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Staffing Needs Overview</label>
-                      <textarea
-                        name="staffing_needs_overview"
-                        value={editFormData.staffing_needs_overview || ''}
-                        onChange={handleEditInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                        rows={3}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Immediate Positions</label>
-                      <Input
-                        name="immediate_positions"
-                        value={editFormData.immediate_positions || ''}
-                        onChange={handleEditInputChange}
-                        type="number"
-                        min="0"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Annual Positions</label>
-                      <Input
-                        name="annual_positions"
-                        value={editFormData.annual_positions || ''}
-                        onChange={handleEditInputChange}
-                        type="number"
-                        min="0"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Position Type</label>
-                      <select
-                        name="position_type"
-                        value={editFormData.position_type || ''}
-                        onChange={handleEditInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                      >
-                        <option value="">Select type</option>
-                        {dimensions.positionTypes.map(type => (
-                          <option key={type.id} value={type.name}>{type.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Additional Staffing Details</label>
-                      <textarea
-                        name="additional_staffing_details"
-                        value={editFormData.additional_staffing_details || ''}
-                        onChange={handleEditInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                        rows={3}
-                      />
-                    </div>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-2 gap-4">
-                    {/* View mode - display all fields */}
+            {expandedSections.companyInfo && (
+              <div className="p-4 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <p className="text-sm text-gray-600">Company Name</p>
                       <p className="font-medium">{company.company_name || 'Not specified'}</p>
@@ -494,52 +154,92 @@ export default function CompanyModal({
                       <p className="text-sm text-gray-600">Annual Revenue</p>
                       <p className="font-medium">{company.annual_revenue || 'Not specified'}</p>
                     </div>
+                  <div>
+                    <p className="text-sm text-gray-600">TIN (Tax ID)</p>
+                    <p className="font-medium">{company.tin || 'Not specified'}</p>
+                    </div>
                     <div className="md:col-span-2">
                       <p className="text-sm text-gray-600">Website</p>
                       <p className="font-medium">{company.company_website || 'Not provided'}</p>
                     </div>
-                    <div className="md:col-span-2">
-                      <p className="text-sm text-gray-600">Address</p>
-                      <p className="font-medium">
-                        {company.address_type && <span className="text-gray-500 text-xs">({company.address_type})</span>}<br/>
-                        {company.street_address}<br/>
-                        {company.apt_suite && <span>{company.apt_suite}<br/></span>}
-                        {[company.city, company.state, company.zip_code]
-                          .filter(Boolean).join(', ')}
-                      </p>
+                </div>
                     </div>
-                    <div>
-                      <p className="text-sm text-gray-600">Contact First Name</p>
-                      <p className="font-medium">{company.contact_first_name || 'Not specified'}</p>
+            )}
                     </div>
-                    <div>
-                      <p className="text-sm text-gray-600">Contact Last Name</p>
-                      <p className="font-medium">{company.contact_last_name || 'Not specified'}</p>
+
+          {/* Addresses Section */}
+          <div className="mb-6 border rounded-lg">
+            <button
+              type="button"
+              onClick={() => toggleSection('address')}
+              className="w-full px-4 py-3 text-left bg-gray-100 hover:bg-gray-200 flex items-center justify-between rounded-t-lg cursor-pointer transition-colors border border-gray-200 hover:border-gray-300"
+            >
+              <div className="flex items-center gap-2">
+                <h4 className="font-medium text-gray-900">Addresses/Locations</h4>
+                <span className="text-xs text-gray-500">(click to expand/collapse)</span>
                     </div>
-                    <div>
-                      <p className="text-sm text-gray-600">Job Title</p>
-                      <p className="font-medium">{company.contact_job_title || 'Not specified'}</p>
+              {expandedSections.address ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
+            </button>
+            {expandedSections.address && (
+              <div className="p-4">
+                <AddressesSection
+                  companyId={company.company_id}
+                  addresses={addresses}
+                  addressTypes={dimensions.addressTypes}
+                  onAddressesChange={onAddressesChange}
+                  saving={saving}
+                  isNewCompany={false}
+                  readOnly={true}
+                />
                     </div>
-                    <div>
-                      <p className="text-sm text-gray-600">Email</p>
-                      <p className="font-medium">{company.contact_email || 'Not specified'}</p>
+            )}
                     </div>
-                    <div>
-                      <p className="text-sm text-gray-600">Phone</p>
-                      <p className="font-medium">{company.contact_phone || 'Not specified'}</p>
+
+          {/* Contacts Section */}
+          <div className="mb-6 border rounded-lg">
+            <button
+              type="button"
+              onClick={() => toggleSection('primaryContact')}
+              className="w-full px-4 py-3 text-left bg-gray-100 hover:bg-gray-200 flex items-center justify-between rounded-t-lg cursor-pointer transition-colors border border-gray-200 hover:border-gray-300"
+            >
+              <div className="flex items-center gap-2">
+                <h4 className="font-medium text-gray-900">Contacts</h4>
+                <span className="text-xs text-gray-500">(click to expand/collapse)</span>
                     </div>
-                    <div>
-                      <p className="text-sm text-gray-600">Mobile</p>
-                      <p className="font-medium">{company.contact_mobile || 'Not specified'}</p>
+              {expandedSections.primaryContact ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
+            </button>
+            {expandedSections.primaryContact && (
+              <div className="p-4">
+                <ContactsSection
+                  companyId={company.company_id}
+                  contacts={contacts}
+                  contactTypes={dimensions.contactTypes}
+                  contactMethods={dimensions.contactMethods}
+                  onContactsChange={onContactsChange}
+                  saving={saving}
+                  isNewCompany={false}
+                  readOnly={true}
+                />
                     </div>
-                    <div>
-                      <p className="text-sm text-gray-600">Contact Type</p>
-                      <p className="font-medium">{company.contact_type || 'Not specified'}</p>
+            )}
                     </div>
-                    <div>
-                      <p className="text-sm text-gray-600">Preferred Contact Method</p>
-                      <p className="font-medium">{company.preferred_contact_method || 'Not specified'}</p>
+
+          {/* Lead Data Section */}
+          <div className="mb-6 border rounded-lg">
+            <button
+              type="button"
+              onClick={() => toggleSection('leadData')}
+              className="w-full px-4 py-3 text-left bg-gray-100 hover:bg-gray-200 flex items-center justify-between rounded-t-lg cursor-pointer transition-colors border border-gray-200 hover:border-gray-300"
+            >
+              <div className="flex items-center gap-2">
+                <h4 className="font-medium text-gray-900">Lead Data</h4>
+                <span className="text-xs text-gray-500">(click to expand/collapse)</span>
                     </div>
+              {expandedSections.leadData ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
+            </button>
+            {expandedSections.leadData && (
+              <div className="p-4 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <p className="text-sm text-gray-600">Lead Source</p>
                       <p className="font-medium">{company.lead_source || 'Not specified'}</p>
@@ -558,10 +258,6 @@ export default function CompanyModal({
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600">Company Status</p>
-                      <p className="font-medium">{company.company_status || 'Not specified'}</p>
-                    </div>
-                    <div>
                       <p className="text-sm text-gray-600">Expected Close Date</p>
                       <p className="font-medium">{company.expected_close_date || 'Not specified'}</p>
                     </div>
@@ -569,55 +265,31 @@ export default function CompanyModal({
                       <p className="text-sm text-gray-600">Opportunity Value</p>
                       <p className="font-medium">{company.opportunity_value ? formatCurrency(company.opportunity_value) : 'Not specified'}</p>
                     </div>
-                    <div className="md:col-span-2">
-                      <p className="text-sm text-gray-600">Staffing Needs Overview</p>
-                      <p className="font-medium">{company.staffing_needs_overview || 'Not provided'}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600">Immediate Positions</p>
-                      <p className="font-medium">{company.immediate_positions || 0}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600">Annual Positions</p>
-                      <p className="font-medium">{company.annual_positions || 0}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600">Position Type</p>
-                      <p className="font-medium">{company.position_type || 'Not specified'}</p>
-                    </div>
-                    <div className="md:col-span-2">
-                      <p className="text-sm text-gray-600">Additional Staffing Details</p>
-                      <p className="font-medium">{company.additional_staffing_details || 'Not provided'}</p>
-                    </div>
                   </div>
-                )}
               </div>
             )}
           </div>
 
-          {/* Opportunity Details Section - COLLAPSIBLE */}
-          <div className="mb-6">
+          {/* Staffing Needs Section */}
+          <div className="mb-6 border rounded-lg">
             <button
-              onClick={() => toggleSection('opportunity')}
-              className="flex items-center justify-between w-full text-left mb-4 p-2 hover:bg-gray-50 rounded"
+              type="button"
+              onClick={() => toggleSection('staffingNeeds')}
+              className="w-full px-4 py-3 text-left bg-gray-100 hover:bg-gray-200 flex items-center justify-between rounded-t-lg cursor-pointer transition-colors border border-gray-200 hover:border-gray-300"
             >
-              <h3 className="text-lg font-semibold">Opportunity Details</h3>
-              {expandedSections.opportunity ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+              <div className="flex items-center gap-2">
+                <h4 className="font-medium text-gray-900">Staffing Needs</h4>
+                <span className="text-xs text-gray-500">(click to expand/collapse)</span>
+              </div>
+              {expandedSections.staffingNeeds ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
             </button>
-            
-            {expandedSections.opportunity && (
-              <div className="pl-2 space-y-4">
-                <div>
-                  <p className="text-sm text-gray-600">Opportunity Value</p>
-                  <p className="text-lg font-semibold text-green-600">
-                    {company.opportunity_value ? formatCurrency(company.opportunity_value) : 'Not set'}
-                  </p>
-                </div>
+            {expandedSections.staffingNeeds && (
+              <div className="p-4 space-y-4">
                 <div>
                   <p className="text-sm text-gray-600">Staffing Needs Overview</p>
-                  <p>{company.staffing_needs_overview || 'Not provided'}</p>
+                  <p className="font-medium">{company.staffing_needs_overview || 'Not provided'}</p>
                 </div>
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <p className="text-sm text-gray-600">Immediate Positions</p>
                     <p className="font-medium">{company.immediate_positions || 0}</p>
@@ -631,22 +303,29 @@ export default function CompanyModal({
                     <p className="font-medium">{company.position_type || 'Not specified'}</p>
                   </div>
                 </div>
+                <div>
+                  <p className="text-sm text-gray-600">Additional Staffing Details</p>
+                  <p className="font-medium">{company.additional_staffing_details || 'Not provided'}</p>
+                </div>
               </div>
             )}
           </div>
 
-          {/* Notes Section - COLLAPSIBLE */}
-          <div className="mb-6">
+          {/* Notes Section */}
+          <div className="mb-6 border rounded-lg">
             <button
+              type="button"
               onClick={() => toggleSection('notes')}
-              className="flex items-center justify-between w-full text-left mb-4 p-2 hover:bg-gray-50 rounded"
+              className="w-full px-4 py-3 text-left bg-gray-100 hover:bg-gray-200 flex items-center justify-between rounded-t-lg cursor-pointer transition-colors border border-gray-200 hover:border-gray-300"
             >
-              <h3 className="text-lg font-semibold">Notes & Activities</h3>
-              {expandedSections.notes ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+              <div className="flex items-center gap-2">
+                <h4 className="font-medium text-gray-900">Notes & Activities</h4>
+                <span className="text-xs text-gray-500">(click to expand/collapse)</span>
+              </div>
+              {expandedSections.notes ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
             </button>
-            
             {expandedSections.notes && (
-              <div className="pl-2">
+              <div className="p-4">
                 <NotesSection
                   companyId={company.company_id}
                   notes={notes}
@@ -654,77 +333,27 @@ export default function CompanyModal({
                   contactMethods={dimensions.contactMethods}
                   onNotesChange={onNotesChange}
                   saving={saving}
+                  readOnly={true}
                 />
               </div>
             )}
           </div>
 
-          {/* Contacts Section - COLLAPSIBLE */}
-          <div className="mb-6">
+          {/* Uploads Section */}
+          <div className="mb-6 border rounded-lg">
             <button
-              onClick={() => toggleSection('contacts')}
-              className="flex items-center justify-between w-full text-left mb-4 p-2 hover:bg-gray-50 rounded"
-            >
-              <h3 className="text-lg font-semibold">Contacts</h3>
-              {expandedSections.contacts ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
-            </button>
-            
-            {expandedSections.contacts && (
-              <div className="pl-2">
-                <ContactsSection
-                  companyId={company.company_id}
-                  contacts={contacts}
-                  contactTypes={dimensions.contactTypes}
-                  onContactsChange={onContactsChange}
-                  saving={saving}
-                />
-              </div>
-            )}
-          </div>
-
-          {/* Addresses Section - COLLAPSIBLE */}
-          <div className="mb-6">
-            <button
-              onClick={() => toggleSection('addresses')}
-              className="flex items-center justify-between w-full text-left mb-4 p-2 hover:bg-gray-50 rounded"
-            >
-              <h3 className="text-lg font-semibold">Addresses</h3>
-              {expandedSections.addresses ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
-            </button>
-            
-            {expandedSections.addresses && (
-              <div className="pl-2">
-                <AddressesSection
-                  companyId={company.company_id}
-                  addresses={addresses}
-                  addressTypes={dimensions.addressTypes}
-                  onAddressesChange={onAddressesChange}
-                  saving={saving}
-                />
-              </div>
-            )}
-          </div>
-
-          {/* Uploads Section - COLLAPSIBLE */}
-          <div className="mb-6">
-            <button
+              type="button"
               onClick={() => toggleSection('uploads')}
-              className="flex items-center justify-between w-full text-left mb-4 p-2 hover:bg-gray-50 rounded"
+              className="w-full px-4 py-3 text-left bg-gray-100 hover:bg-gray-200 flex items-center justify-between rounded-t-lg cursor-pointer transition-colors border border-gray-200 hover:border-gray-300"
             >
-              <h3 className="text-lg font-semibold">Documents & Files</h3>
-              {expandedSections.uploads ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+              <div className="flex items-center gap-2">
+                <h4 className="font-medium text-gray-900">Documents & Files</h4>
+                <span className="text-xs text-gray-500">(click to expand/collapse)</span>
+              </div>
+              {expandedSections.uploads ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
             </button>
-            
             {expandedSections.uploads && (
-              <div className="pl-2">
-                <div className="mb-4">
-                  <Button size="sm" variant="outline" onClick={() => {
-                    toast.success('File upload functionality coming soon');
-                  }}>
-                    <Upload className="h-4 w-4 mr-2" />
-                    Upload File
-                  </Button>
-                </div>
+              <div className="p-4">
                 <p className="text-sm text-gray-500">No files uploaded yet</p>
               </div>
             )}
@@ -732,23 +361,104 @@ export default function CompanyModal({
 
           {/* Action Buttons */}
           <div className="flex gap-2 pt-4 border-t">
-            {isEditMode ? (
-              <>
-                <Button onClick={handleSave} disabled={saving}>
-                  {saving ? 'Saving...' : 'Save Changes'}
-                </Button>
-                <Button variant="outline" onClick={() => onEditModeChange(false)}>
-                  Cancel
-                </Button>
-              </>
-            ) : (
-              <Button onClick={() => onEditModeChange(true)}>
-                Edit Company
+            <Button variant="outline" onClick={onClose}>
+              Close
               </Button>
-            )}
           </div>
         </div>
       </div>
+
+      {/* Notes Modal */}
+      {showNotesModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-[100] flex items-start justify-center p-4 pt-20">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[80vh] overflow-y-auto">
+            <div className="p-6 border-b sticky top-0 bg-white">
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-semibold">Add Note/Activity</h3>
+                <button
+                  onClick={() => setShowNotesModal(false)}
+                  className="text-gray-400 hover:text-gray-600 text-2xl"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+            <div className="p-6">
+              <NotesSection
+                companyId={company.company_id}
+                notes={notes}
+                noteTypes={dimensions.noteTypes}
+                contactMethods={dimensions.contactMethods}
+                onNotesChange={onNotesChange}
+                saving={saving}
+                readOnly={false}
+                onNoteSaved={() => setShowNotesModal(false)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Upload Modal */}
+      {showUploadModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-[100] flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+            <div className="p-6 border-b">
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-semibold">Upload File</h3>
+                <button
+                  onClick={() => setShowUploadModal(false)}
+                  className="text-gray-400 hover:text-gray-600 text-2xl"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+            <div className="p-6">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Document Type
+                  </label>
+                  <select
+                    value={selectedDocType}
+                    onChange={(e) => setSelectedDocType(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Select document type</option>
+                    {dimensions.documentTypes.map((type) => (
+                      <option key={type.id} value={type.id}>
+                        {type.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div className="text-center">
+                  <Button 
+                    onClick={() => {
+                      if (!selectedDocType) {
+                        toast.error('Please select a document type');
+                        return;
+                      }
+                      toast.success(`File upload functionality coming soon for ${selectedDocType}`);
+                      setShowUploadModal(false);
+                      setSelectedDocType('');
+                    }}
+                    disabled={!selectedDocType}
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    Upload File
+                  </Button>
+                  <p className="text-sm text-gray-500 mt-2">
+                    File upload functionality coming soon
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
