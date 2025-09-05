@@ -86,5 +86,3 @@ When backing up changes to GitHub, ALWAYS use `git push origin main` because bot
 2. `git commit -m "descriptive message"` to commit changes
 3. `git push origin main` to push to GitHub
 
-**Never use:** `git push origin HEAD:master` (incorrect branch name)
-**Environment files:** .env.local is correctly ignored for security

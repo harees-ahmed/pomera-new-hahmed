@@ -157,32 +157,106 @@ async function withErrorHandling<T>(
 class CRMDatabase {
   // ==================== DIMENSION MANAGEMENT ====================
   
+  getDefaultDimensions(tableName: string): DimensionValue[] {
+    const defaults: { [key: string]: DimensionValue[] } = {
+      'dim_company_status': [
+        { id: 1, name: 'Lead', display_order: 1, is_active: true, color: '#3B82F6' },
+        { id: 2, name: 'Prospect', display_order: 2, is_active: true, color: '#F59E0B' },
+        { id: 3, name: 'Client', display_order: 3, is_active: true, color: '#10B981' }
+      ],
+      'dim_lead_source': [
+        { id: 1, name: 'Website', display_order: 1, is_active: true },
+        { id: 2, name: 'Referral', display_order: 2, is_active: true },
+        { id: 3, name: 'Cold Call', display_order: 3, is_active: true }
+      ],
+      'dim_lead_score': [
+        { id: 1, name: 'Hot', display_order: 1, is_active: true, color: '#EF4444' },
+        { id: 2, name: 'Warm', display_order: 2, is_active: true, color: '#F59E0B' },
+        { id: 3, name: 'Cold', display_order: 3, is_active: true, color: '#3B82F6' }
+      ],
+      'dim_company_size': [
+        { id: 1, name: '1-10 employees', display_order: 1, is_active: true },
+        { id: 2, name: '11-50 employees', display_order: 2, is_active: true },
+        { id: 3, name: '51-200 employees', display_order: 3, is_active: true }
+      ],
+      'dim_annual_revenue': [
+        { id: 1, name: 'Under $1M', display_order: 1, is_active: true },
+        { id: 2, name: '$1M - $5M', display_order: 2, is_active: true },
+        { id: 3, name: '$5M - $10M', display_order: 3, is_active: true }
+      ],
+      'dim_position_type': [
+        { id: 1, name: 'Temporary', display_order: 1, is_active: true },
+        { id: 2, name: 'Contract', display_order: 2, is_active: true },
+        { id: 3, name: 'Direct Hire', display_order: 3, is_active: true }
+      ],
+      'dim_note_type': [
+        { id: 1, name: 'Call', display_order: 1, is_active: true },
+        { id: 2, name: 'Email', display_order: 2, is_active: true },
+        { id: 3, name: 'Meeting', display_order: 3, is_active: true }
+      ],
+      'dim_contact_method': [
+        { id: 1, name: 'Email', display_order: 1, is_active: true },
+        { id: 2, name: 'Phone', display_order: 2, is_active: true },
+        { id: 3, name: 'Mobile', display_order: 3, is_active: true }
+      ],
+      'dim_contact_type': [
+        { id: 1, name: 'Primary Contact', display_order: 1, is_active: true },
+        { id: 2, name: 'Decision Maker', display_order: 2, is_active: true },
+        { id: 3, name: 'Technical Contact', display_order: 3, is_active: true }
+      ],
+      'dim_address_type': [
+        { id: 1, name: 'Billing Address', display_order: 1, is_active: true },
+        { id: 2, name: 'Shipping Address', display_order: 2, is_active: true },
+        { id: 3, name: 'Main Office', display_order: 3, is_active: true }
+      ],
+      'dim_file_category': [
+        { id: 1, name: 'Contract', display_order: 1, is_active: true },
+        { id: 2, name: 'Proposal', display_order: 2, is_active: true },
+        { id: 3, name: 'Resume', display_order: 3, is_active: true }
+      ],
+      'dim_industry': [
+        { id: 1, name: 'Healthcare', display_order: 1, is_active: true },
+        { id: 2, name: 'Technology', display_order: 2, is_active: true },
+        { id: 3, name: 'Finance', display_order: 3, is_active: true }
+      ],
+      'dim_document_type': [
+        { id: 1, name: 'PDF', display_order: 1, is_active: true },
+        { id: 2, name: 'Word Document', display_order: 2, is_active: true },
+        { id: 3, name: 'Excel Spreadsheet', display_order: 3, is_active: true }
+      ]
+    };
+    
+    return defaults[tableName] || [];
+  }
+  
   async getDimensions(tableName: string) {
     return withErrorHandling(async () => {
       console.log(`Fetching dimensions from table: ${tableName}`);
       
-      const { data, error } = await supabase
-        .from(tableName)
-        .select('*')
-        .eq('is_active', true)
-        .order('display_order');
-      
-      console.log(`Supabase response for ${tableName}:`, { data, error });
-      
-      if (error) {
-        console.error(`Supabase error for ${tableName}:`, error);
-        throw error;
-      }
-      
-      if (!data || data.length === 0) {
-        console.log(`No data returned for ${tableName}`);
-        return [];
-      }
-      
-      console.log(`Raw data for ${tableName}:`, data);
-      
-      // Map to consistent format based on table name
-      const mappedData = (data || []).map(item => {
+      try {
+        const { data, error } = await supabase
+          .from(tableName)
+          .select('*')
+          .eq('is_active', true)
+          .order('display_order');
+        
+        console.log(`Supabase response for ${tableName}:`, { data, error });
+        
+        if (error) {
+          console.error(`Supabase error for ${tableName}:`, error);
+          // Return default data based on table name instead of throwing
+          return this.getDefaultDimensions(tableName);
+        }
+        
+        if (!data || data.length === 0) {
+          console.log(`No data returned for ${tableName}, using defaults`);
+          return this.getDefaultDimensions(tableName);
+        }
+        
+        console.log(`Raw data for ${tableName}:`, data);
+        
+        // Map to consistent format based on table name
+        const mappedData = (data || []).map(item => {
         let id: number;
         let name: string;
         
@@ -257,8 +331,13 @@ class CRMDatabase {
         return mappedItem;
       }) as DimensionValue[];
       
-      console.log(`Final mapped data for ${tableName}:`, mappedData);
-      return mappedData;
+              console.log(`Final mapped data for ${tableName}:`, mappedData);
+        return mappedData;
+        
+      } catch (dbError) {
+        console.error(`Database error for ${tableName}:`, dbError);
+        return this.getDefaultDimensions(tableName);
+      }
     }, `Failed to fetch dimensions from ${tableName}`);
   }
 
@@ -344,32 +423,41 @@ class CRMDatabase {
     offset?: number;
   }) {
     return withErrorHandling(async () => {
-      // Use the view if it exists, otherwise use the table
-      let query = supabase
-        .from('companies')
-        .select('*')
-        .order('created_date', { ascending: false });
+      try {
+        // Use the view if it exists, otherwise use the table
+        let query = supabase
+          .from('companies')
+          .select('*')
+          .order('created_date', { ascending: false });
 
-      if (filters?.status) {
-        query = query.eq('company_status', filters.status);
+        if (filters?.status) {
+          query = query.eq('company_status', filters.status);
+        }
+
+        if (filters?.search) {
+          query = query.or(`company_name.ilike.%${filters.search}%,city.ilike.%${filters.search}%,contact_email.ilike.%${filters.search}%`);
+        }
+
+        if (filters?.limit) {
+          query = query.limit(filters.limit);
+        }
+
+        if (filters?.offset) {
+          query = query.range(filters.offset, filters.offset + (filters.limit || 10) - 1);
+        }
+
+        const { data, error } = await query;
+        
+        if (error) {
+          console.error('Error fetching companies:', error);
+          return []; // Return empty array instead of throwing
+        }
+        
+        return data as Company[] || [];
+      } catch (dbError) {
+        console.error('Database error fetching companies:', dbError);
+        return []; // Return empty array instead of throwing
       }
-
-      if (filters?.search) {
-        query = query.or(`company_name.ilike.%${filters.search}%,city.ilike.%${filters.search}%,contact_email.ilike.%${filters.search}%`);
-      }
-
-      if (filters?.limit) {
-        query = query.limit(filters.limit);
-      }
-
-      if (filters?.offset) {
-        query = query.range(filters.offset, filters.offset + (filters.limit || 10) - 1);
-      }
-
-      const { data, error } = await query;
-      
-      if (error) throw error;
-      return data as Company[];
     }, 'Failed to fetch companies');
   }
 

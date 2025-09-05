@@ -134,6 +134,21 @@ CREATE INDEX idx_contacts_email ON company_contacts(contact_email);
 CREATE INDEX idx_notes_company_id ON company_notes(company_id);
 CREATE INDEX idx_files_company_id ON company_files(company_id);
 
+-- Dimension table indexes
+CREATE INDEX idx_dim_industry_active ON dim_industry(is_active, display_order);
+CREATE INDEX idx_dim_company_status_active ON dim_company_status(is_active, display_order);
+CREATE INDEX idx_dim_lead_source_active ON dim_lead_source(is_active, display_order);
+CREATE INDEX idx_dim_lead_score_active ON dim_lead_score(is_active, display_order);
+CREATE INDEX idx_dim_company_size_active ON dim_company_size(is_active, display_order);
+CREATE INDEX idx_dim_annual_revenue_active ON dim_annual_revenue(is_active, display_order);
+CREATE INDEX idx_dim_position_type_active ON dim_position_type(is_active, display_order);
+CREATE INDEX idx_dim_note_type_active ON dim_note_type(is_active, display_order);
+CREATE INDEX idx_dim_contact_method_active ON dim_contact_method(is_active, display_order);
+CREATE INDEX idx_dim_contact_type_active ON dim_contact_type(is_active, display_order);
+CREATE INDEX idx_dim_address_type_active ON dim_address_type(is_active, display_order);
+CREATE INDEX idx_dim_file_category_active ON dim_file_category(is_active, display_order);
+CREATE INDEX idx_dim_document_type_active ON dim_document_type(is_active, display_order);
+
 -- =====================================================
 -- ROW LEVEL SECURITY (RLS)
 -- =====================================================
@@ -143,6 +158,21 @@ ALTER TABLE company_contacts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE company_notes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE company_files ENABLE ROW LEVEL SECURITY;
 
+-- Enable RLS for dimension tables
+ALTER TABLE dim_industry ENABLE ROW LEVEL SECURITY;
+ALTER TABLE dim_company_status ENABLE ROW LEVEL SECURITY;
+ALTER TABLE dim_lead_source ENABLE ROW LEVEL SECURITY;
+ALTER TABLE dim_lead_score ENABLE ROW LEVEL SECURITY;
+ALTER TABLE dim_company_size ENABLE ROW LEVEL SECURITY;
+ALTER TABLE dim_annual_revenue ENABLE ROW LEVEL SECURITY;
+ALTER TABLE dim_position_type ENABLE ROW LEVEL SECURITY;
+ALTER TABLE dim_note_type ENABLE ROW LEVEL SECURITY;
+ALTER TABLE dim_contact_method ENABLE ROW LEVEL SECURITY;
+ALTER TABLE dim_contact_type ENABLE ROW LEVEL SECURITY;
+ALTER TABLE dim_address_type ENABLE ROW LEVEL SECURITY;
+ALTER TABLE dim_file_category ENABLE ROW LEVEL SECURITY;
+ALTER TABLE dim_document_type ENABLE ROW LEVEL SECURITY;
+
 -- =====================================================
 -- RLS POLICIES
 -- =====================================================
@@ -151,6 +181,21 @@ CREATE POLICY "Enable all operations for company_addresses" ON company_addresses
 CREATE POLICY "Enable all operations for company_contacts" ON company_contacts FOR ALL USING (true);
 CREATE POLICY "Enable all operations for company_notes" ON company_notes FOR ALL USING (true);
 CREATE POLICY "Enable all operations for company_files" ON company_files FOR ALL USING (true);
+
+-- Dimension table policies (read-only for most users)
+CREATE POLICY "Enable read access for dim_industry" ON dim_industry FOR SELECT USING (true);
+CREATE POLICY "Enable read access for dim_company_status" ON dim_company_status FOR SELECT USING (true);
+CREATE POLICY "Enable read access for dim_lead_source" ON dim_lead_source FOR SELECT USING (true);
+CREATE POLICY "Enable read access for dim_lead_score" ON dim_lead_score FOR SELECT USING (true);
+CREATE POLICY "Enable read access for dim_company_size" ON dim_company_size FOR SELECT USING (true);
+CREATE POLICY "Enable read access for dim_annual_revenue" ON dim_annual_revenue FOR SELECT USING (true);
+CREATE POLICY "Enable read access for dim_position_type" ON dim_position_type FOR SELECT USING (true);
+CREATE POLICY "Enable read access for dim_note_type" ON dim_note_type FOR SELECT USING (true);
+CREATE POLICY "Enable read access for dim_contact_method" ON dim_contact_method FOR SELECT USING (true);
+CREATE POLICY "Enable read access for dim_contact_type" ON dim_contact_type FOR SELECT USING (true);
+CREATE POLICY "Enable read access for dim_address_type" ON dim_address_type FOR SELECT USING (true);
+CREATE POLICY "Enable read access for dim_file_category" ON dim_file_category FOR SELECT USING (true);
+CREATE POLICY "Enable read access for dim_document_type" ON dim_document_type FOR SELECT USING (true);
 
 -- =====================================================
 -- FUNCTIONS AND TRIGGERS
@@ -276,6 +321,15 @@ CREATE TABLE dim_file_category (
   created_date TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Document Type Dimension
+CREATE TABLE dim_document_type (
+  doc_type_id SERIAL PRIMARY KEY,
+  doc_type_name VARCHAR(100) NOT NULL UNIQUE,
+  display_order INTEGER DEFAULT 0,
+  is_active BOOLEAN DEFAULT TRUE,
+  created_date TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- =====================================================
 -- INSERT DEFAULT DIMENSION VALUES
 -- =====================================================
@@ -382,6 +436,15 @@ INSERT INTO dim_file_category (category_name, display_order) VALUES
   ('Resume', 3),
   ('Reference', 4),
   ('Other', 5);
+
+-- Document Types
+INSERT INTO dim_document_type (doc_type_name, display_order) VALUES 
+  ('PDF', 1),
+  ('Word Document', 2),
+  ('Excel Spreadsheet', 3),
+  ('Image', 4),
+  ('Text File', 5),
+  ('Other', 6);
 
 -- =====================================================
 -- TRIGGERS FOR UPDATED_DATE

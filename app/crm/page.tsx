@@ -70,65 +70,125 @@ export default function CRMPage() {
     try {
       // Load companies first
       console.log('=== DEBUGGING COMPANIES LOADING ===');
-      const companiesResult = await crmDatabase.getCompanies();
-      console.log('Raw companiesResult:', companiesResult);
-      console.log('Type of companiesResult:', typeof companiesResult);
-      console.log('companiesResult length:', companiesResult?.length);
-      
-      if (companiesResult) {
-        console.log('Setting companies with data:', companiesResult);
-        setCompanies(companiesResult);
-      } else {
-        console.log('No companies data, setting empty array');
+      try {
+        const companiesResult = await crmDatabase.getCompanies();
+        console.log('Raw companiesResult:', companiesResult);
+        console.log('Type of companiesResult:', typeof companiesResult);
+        console.log('companiesResult length:', companiesResult?.length);
+        
+        if (companiesResult) {
+          console.log('Setting companies with data:', companiesResult);
+          setCompanies(companiesResult);
+        } else {
+          console.log('No companies data, setting empty array');
+          setCompanies([]);
+        }
+      } catch (companiesError) {
+        console.error('Error loading companies:', companiesError);
+        console.log('Setting empty companies array due to error');
         setCompanies([]);
+        toast.error('Failed to load companies data');
       }
       
       // Load dimensions using the working approach
       try {
         console.log('Starting to load dimensions...');
-        const [statuses, sources, scores, sizes, revenues, positionTypes, noteTypes, contactMethods, contactTypes, addressTypes, fileCategories, industries, documentTypes] = await Promise.all([
-          crmDatabase.getDimensions('dim_company_status'),
-          crmDatabase.getDimensions('dim_lead_source'),
-          crmDatabase.getDimensions('dim_lead_score'),
-          crmDatabase.getDimensions('dim_company_size'),
-          crmDatabase.getDimensions('dim_annual_revenue'),
-          crmDatabase.getDimensions('dim_position_type'),
-          crmDatabase.getDimensions('dim_note_type'),
-          crmDatabase.getDimensions('dim_contact_method'),
-          crmDatabase.getDimensions('dim_contact_type'),
-          crmDatabase.getDimensions('dim_address_type'),
-          crmDatabase.getDimensions('dim_file_category'),
-          crmDatabase.getDimensions('dim_industry'),
-          crmDatabase.getDocumentTypes()
-        ]);
-        console.log('All dimensions loaded successfully');
         
-        console.log('Document types loaded:', documentTypes);
-        setDimensions({
-          statuses: statuses || [],
-          sources: sources || [],
-          scores: scores || [],
-          sizes: sizes || [],
-          revenues: revenues || [],
-          positionTypes: positionTypes || [],
-          noteTypes: noteTypes || [],
-          contactMethods: contactMethods || [],
-          contactTypes: contactTypes || [],
-          addressTypes: addressTypes || [],
-          fileCategories: fileCategories || [],
-          industries: industries || [],
-          documentTypes: documentTypes || []
-        });
-        
-        // Set default active tab to first status if not already set
-        if (!activeTab && statuses && statuses.length > 0) {
-          setActiveTab(statuses[0].name.toLowerCase());
+        // Initialize with default values in case database is empty
+        const defaultDimensions = {
+          statuses: [
+            { id: 1, name: 'Lead', display_order: 1, is_active: true, color: '#3B82F6' },
+            { id: 2, name: 'Prospect', display_order: 2, is_active: true, color: '#F59E0B' },
+            { id: 3, name: 'Client', display_order: 3, is_active: true, color: '#10B981' }
+          ],
+          sources: [],
+          scores: [],
+          sizes: [],
+          revenues: [],
+          positionTypes: [],
+          noteTypes: [],
+          contactMethods: [],
+          contactTypes: [],
+          addressTypes: [],
+          fileCategories: [],
+          industries: [],
+          documentTypes: []
+        };
+
+        try {
+          const [statuses, sources, scores, sizes, revenues, positionTypes, noteTypes, contactMethods, contactTypes, addressTypes, fileCategories, industries, documentTypes] = await Promise.all([
+            crmDatabase.getDimensions('dim_company_status').catch(() => defaultDimensions.statuses),
+            crmDatabase.getDimensions('dim_lead_source').catch(() => []),
+            crmDatabase.getDimensions('dim_lead_score').catch(() => []),
+            crmDatabase.getDimensions('dim_company_size').catch(() => []),
+            crmDatabase.getDimensions('dim_annual_revenue').catch(() => []),
+            crmDatabase.getDimensions('dim_position_type').catch(() => []),
+            crmDatabase.getDimensions('dim_note_type').catch(() => []),
+            crmDatabase.getDimensions('dim_contact_method').catch(() => []),
+            crmDatabase.getDimensions('dim_contact_type').catch(() => []),
+            crmDatabase.getDimensions('dim_address_type').catch(() => []),
+            crmDatabase.getDimensions('dim_file_category').catch(() => []),
+            crmDatabase.getDimensions('dim_industry').catch(() => []),
+            crmDatabase.getDocumentTypes().catch(() => [])
+          ]);
+          
+          console.log('All dimensions loaded successfully');
+          
+          setDimensions({
+            statuses: statuses || defaultDimensions.statuses,
+            sources: sources || [],
+            scores: scores || [],
+            sizes: sizes || [],
+            revenues: revenues || [],
+            positionTypes: positionTypes || [],
+            noteTypes: noteTypes || [],
+            contactMethods: contactMethods || [],
+            contactTypes: contactTypes || [],
+            addressTypes: addressTypes || [],
+            fileCategories: fileCategories || [],
+            industries: industries || [],
+            documentTypes: documentTypes || []
+          });
+          
+          // Set default active tab to first status if not already set
+          if (!activeTab && (statuses?.length > 0 || defaultDimensions.statuses.length > 0)) {
+            setActiveTab((statuses?.[0]?.name || defaultDimensions.statuses[0].name).toLowerCase());
+          }
+        } catch (dbError) {
+          console.error('Database error, using default dimensions:', dbError);
+          setDimensions(defaultDimensions);
+          if (!activeTab) {
+            setActiveTab(defaultDimensions.statuses[0].name.toLowerCase());
+          }
         }
+        
       } catch (dimensionError) {
         console.error('Error loading dimensions:', dimensionError);
         console.error('Error details:', dimensionError);
-        toast.error('Failed to load some dimension data');
-        // Don't fail the whole load if dimensions fail
+        toast.error('Failed to load some dimension data, using defaults');
+        // Use default dimensions as fallback
+        setDimensions({
+          statuses: [
+            { id: 1, name: 'Lead', display_order: 1, is_active: true, color: '#3B82F6' },
+            { id: 2, name: 'Prospect', display_order: 2, is_active: true, color: '#F59E0B' },
+            { id: 3, name: 'Client', display_order: 3, is_active: true, color: '#10B981' }
+          ],
+          sources: [],
+          scores: [],
+          sizes: [],
+          revenues: [],
+          positionTypes: [],
+          noteTypes: [],
+          contactMethods: [],
+          contactTypes: [],
+          addressTypes: [],
+          fileCategories: [],
+          industries: [],
+          documentTypes: []
+        });
+        if (!activeTab) {
+          setActiveTab('lead');
+        }
       }
       
     } catch (error) {
