@@ -35,6 +35,12 @@ export interface Company {
   position_type?: string;
   additional_staffing_details?: string;
   
+  // Contact fields
+  contact_email?: string;
+  contact_phone?: string;
+  city?: string;
+  state?: string;
+  
   // Metadata
   created_date: string;
   updated_date: string;
@@ -398,7 +404,7 @@ class CRMDatabase {
       // Clean up empty date fields - convert empty strings to null
       const cleanedCompany = { ...company };
       if (cleanedCompany.expected_close_date === '') {
-        cleanedCompany.expected_close_date = null;
+        cleanedCompany.expected_close_date = undefined;
       }
       
       // Add timestamps
@@ -620,7 +626,7 @@ class CRMDatabase {
     }, 'Failed to fetch notes');
   }
 
-  async createNote(note: Partial<CompanyNote> | { company_id: string; type: string; text: string; follow_up_date?: string }) {
+  async createNote(note: Partial<CompanyNote> | { company_id: string; type: string; text: string; follow_up_date?: string; follow_up_type?: string }) {
     return withErrorHandling(async () => {
       let processedNote: Partial<CompanyNote>;
       
@@ -639,8 +645,8 @@ class CRMDatabase {
           note_type: note.type,
           note_type_id: noteType.id,
           note_text: note.text,
-          follow_up_date: note.follow_up_date || null,
-          follow_up_type: note.follow_up_type || null,
+          follow_up_date: note.follow_up_date || undefined,
+          follow_up_type: note.follow_up_type || undefined,
           created_date: new Date().toISOString()
         };
       } else {

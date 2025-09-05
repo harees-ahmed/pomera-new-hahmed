@@ -17,6 +17,7 @@ interface ContactsSectionProps {
   onContactsChange: (contacts: CompanyContact[]) => void;
   saving: boolean;
   isNewCompany?: boolean;
+  readOnly?: boolean;
 }
 
 export default function ContactsSection({ 
@@ -26,7 +27,8 @@ export default function ContactsSection({
   contactMethods,
   onContactsChange,
   saving,
-  isNewCompany = false
+  isNewCompany = false,
+  readOnly = false
 }: ContactsSectionProps) {
   const [newContact, setNewContact] = useState<Partial<CompanyContact>>({
     contact_type: '',
@@ -36,7 +38,7 @@ export default function ContactsSection({
     contact_email: '',
     contact_phone: '',
     contact_mobile: '',
-    preferred_contact_method: ''
+    preferred_contact_method: 'email' as 'email' | 'phone' | 'mobile'
   });
 
   const [showAddForm, setShowAddForm] = useState(false);
@@ -77,7 +79,7 @@ export default function ContactsSection({
           contact_email: newContact.contact_email || '',
           contact_phone: newContact.contact_phone,
           contact_mobile: newContact.contact_mobile,
-          preferred_contact_method: newContact.preferred_contact_method || '',
+          preferred_contact_method: newContact.preferred_contact_method || 'email',
           is_active: true,
           created_date: new Date().toISOString(),
           updated_date: new Date().toISOString()
@@ -92,7 +94,7 @@ export default function ContactsSection({
           contact_email: '',
           contact_phone: '',
           contact_mobile: '',
-          preferred_contact_method: ''
+          preferred_contact_method: 'email' as 'email' | 'phone' | 'mobile'
         });
         setShowAddForm(false);
         toast.success('Contact added (will be saved when company is created)');
@@ -112,7 +114,7 @@ export default function ContactsSection({
           contact_email: '',
           contact_phone: '',
           contact_mobile: '',
-          preferred_contact_method: ''
+          preferred_contact_method: 'email' as 'email' | 'phone' | 'mobile'
         });
         setShowAddForm(false);
         toast.success('Contact added successfully');
