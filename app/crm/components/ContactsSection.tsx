@@ -17,7 +17,6 @@ interface ContactsSectionProps {
   onContactsChange: (contacts: CompanyContact[]) => void;
   saving: boolean;
   isNewCompany?: boolean;
-  readOnly?: boolean;
 }
 
 export default function ContactsSection({ 
@@ -27,8 +26,7 @@ export default function ContactsSection({
   contactMethods,
   onContactsChange,
   saving,
-  isNewCompany = false,
-  readOnly = false
+  isNewCompany = false
 }: ContactsSectionProps) {
   const [newContact, setNewContact] = useState<Partial<CompanyContact>>({
     contact_type: '',
@@ -94,7 +92,7 @@ export default function ContactsSection({
           contact_email: '',
           contact_phone: '',
           contact_mobile: '',
-          preferred_contact_method: 'email' as 'email' | 'phone' | 'mobile'
+          preferred_contact_method: 'email'
         });
         setShowAddForm(false);
         toast.success('Contact added (will be saved when company is created)');
@@ -114,7 +112,7 @@ export default function ContactsSection({
           contact_email: '',
           contact_phone: '',
           contact_mobile: '',
-          preferred_contact_method: 'email' as 'email' | 'phone' | 'mobile'
+          preferred_contact_method: 'email'
         });
         setShowAddForm(false);
         toast.success('Contact added successfully');

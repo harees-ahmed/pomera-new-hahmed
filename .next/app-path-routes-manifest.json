@@ -1,0 +1,10 @@
+{
+  "/_not-found/page": "/_not-found",
+  "/favicon.ico/route": "/favicon.ico",
+  "/ats/page": "/ats",
+  "/crm/page": "/crm",
+  "/page": "/",
+  "/portal/candidate/page": "/portal/candidate",
+  "/portal/client/page": "/portal/client",
+  "/admin/page": "/admin"
+}

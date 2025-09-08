@@ -14,7 +14,6 @@ interface AddressesSectionProps {
   onAddressesChange: (addresses: CompanyAddress[]) => void;
   saving: boolean;
   isNewCompany?: boolean;
-  readOnly?: boolean;
 }
 
 export default function AddressesSection({ 
@@ -23,8 +22,7 @@ export default function AddressesSection({
   addressTypes,
   onAddressesChange,
   saving,
-  isNewCompany = false,
-  readOnly = false
+  isNewCompany = false
 }: AddressesSectionProps) {
   console.log('AddressesSection - addressTypes:', addressTypes);
   console.log('AddressesSection - addresses:', addresses);

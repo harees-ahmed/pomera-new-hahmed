@@ -52,8 +52,7 @@ export default function NotesSection({
         company_id: companyId,
         type: newNote.type,
         text: newNote.text,
-        follow_up_date: newNote.followUpDate || undefined,
-        follow_up_type: newNote.followUpType || undefined
+        follow_up_date: newNote.followUpDate || undefined
       });
       
       onNotesChange([...notes, newNoteData]);

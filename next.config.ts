@@ -7,13 +7,7 @@ const nextConfig: NextConfig = {
     unoptimized: true
   },
   basePath: process.env.NODE_ENV === 'production' ? '/pomera-new-hahmed' : '',
-  assetPrefix: process.env.NODE_ENV === 'production' ? '/pomera-new-hahmed' : '',
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
+  assetPrefix: process.env.NODE_ENV === 'production' ? '/pomera-new-hahmed' : ''
 };
 
 export default nextConfig;
