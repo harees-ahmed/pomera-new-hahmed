@@ -36,7 +36,7 @@ export default function ContactsSection({
     contact_email: '',
     contact_phone: '',
     contact_mobile: '',
-    preferred_contact_method: 'email' as 'email' | 'phone' | 'mobile'
+    preferred_contact_method: ''
   });
 
   const [showAddForm, setShowAddForm] = useState(false);
@@ -77,7 +77,7 @@ export default function ContactsSection({
           contact_email: newContact.contact_email || '',
           contact_phone: newContact.contact_phone,
           contact_mobile: newContact.contact_mobile,
-          preferred_contact_method: newContact.preferred_contact_method || 'email',
+          preferred_contact_method: newContact.preferred_contact_method || '',
           is_active: true,
           created_date: new Date().toISOString(),
           updated_date: new Date().toISOString()
@@ -92,7 +92,7 @@ export default function ContactsSection({
           contact_email: '',
           contact_phone: '',
           contact_mobile: '',
-          preferred_contact_method: 'email'
+          preferred_contact_method: ''
         });
         setShowAddForm(false);
         toast.success('Contact added (will be saved when company is created)');
@@ -112,7 +112,7 @@ export default function ContactsSection({
           contact_email: '',
           contact_phone: '',
           contact_mobile: '',
-          preferred_contact_method: 'email'
+          preferred_contact_method: ''
         });
         setShowAddForm(false);
         toast.success('Contact added successfully');

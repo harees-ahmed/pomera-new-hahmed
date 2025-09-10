@@ -42,7 +42,7 @@ export default function NotesSection({
     }
 
     // Validate follow-up date is not in the past
-    if (newNote.followUpDate && new Date(newNote.followUpDate) < new Date(new Date().setHours(0, 0, 0, 0))) {
+    if (newNote.followUpDate && new Date(newNote.followUpDate) < new Date().setHours(0, 0, 0, 0)) {
       toast.error('Follow-up date cannot be in the past');
       return;
     }
@@ -52,7 +52,8 @@ export default function NotesSection({
         company_id: companyId,
         type: newNote.type,
         text: newNote.text,
-        follow_up_date: newNote.followUpDate || undefined
+        follow_up_date: newNote.followUpDate || null,
+        follow_up_type: newNote.followUpType || null
       });
       
       onNotesChange([...notes, newNoteData]);

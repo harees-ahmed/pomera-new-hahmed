@@ -23,14 +23,6 @@ export interface Company {
   revenue_id?: number;
   position_type_id?: number;
   
-  // Contact fields (from primary contact)
-  contact_email?: string;
-  contact_phone?: string;
-  
-  // Location fields (from primary address)
-  city?: string;
-  state?: string;
-  
   // Dates
   expected_close_date?: string;
   
@@ -162,84 +154,6 @@ class CRMDatabase {
   async getDimensions(tableName: string) {
     return withErrorHandling(async () => {
       console.log(`Fetching dimensions from table: ${tableName}`);
-      
-      // TEMPORARY: Return mock data while Supabase connection is being fixed
-      console.log('Using mock dimensions data due to Supabase connection issues');
-      
-      const mockDimensions: { [key: string]: DimensionValue[] } = {
-        'dim_company_status': [
-          { id: 1, name: 'Lead', display_order: 1, is_active: true, color: 'blue' },
-          { id: 2, name: 'Prospect', display_order: 2, is_active: true, color: 'orange' },
-          { id: 3, name: 'Client', display_order: 3, is_active: true, color: 'green' },
-          { id: 4, name: 'Closed', display_order: 4, is_active: true, color: 'gray' }
-        ],
-        'dim_lead_source': [
-          { id: 1, name: 'Website', display_order: 1, is_active: true, color: 'blue' },
-          { id: 2, name: 'Referral', display_order: 2, is_active: true, color: 'green' },
-          { id: 3, name: 'Cold Call', display_order: 3, is_active: true, color: 'orange' },
-          { id: 4, name: 'Email Campaign', display_order: 4, is_active: true, color: 'purple' }
-        ],
-        'dim_lead_score': [
-          { id: 1, name: 'Hot', display_order: 1, is_active: true, color: 'red' },
-          { id: 2, name: 'Warm', display_order: 2, is_active: true, color: 'orange' },
-          { id: 3, name: 'Cold', display_order: 3, is_active: true, color: 'blue' }
-        ],
-        'dim_company_size': [
-          { id: 1, name: 'Small', display_order: 1, is_active: true, color: 'green' },
-          { id: 2, name: 'Medium', display_order: 2, is_active: true, color: 'orange' },
-          { id: 3, name: 'Large', display_order: 3, is_active: true, color: 'red' }
-        ],
-        'dim_annual_revenue': [
-          { id: 1, name: '$0-1M', display_order: 1, is_active: true, color: 'green' },
-          { id: 2, name: '$1M-5M', display_order: 2, is_active: true, color: 'orange' },
-          { id: 3, name: '$5M-10M', display_order: 3, is_active: true, color: 'red' },
-          { id: 4, name: '$10M+', display_order: 4, is_active: true, color: 'purple' }
-        ],
-        'dim_position_type': [
-          { id: 1, name: 'Clinical', display_order: 1, is_active: true, color: 'blue' },
-          { id: 2, name: 'Technical', display_order: 2, is_active: true, color: 'green' },
-          { id: 3, name: 'Administrative', display_order: 3, is_active: true, color: 'orange' }
-        ],
-        'dim_note_type': [
-          { id: 1, name: 'General', display_order: 1, is_active: true, color: 'blue' },
-          { id: 2, name: 'Follow-up', display_order: 2, is_active: true, color: 'orange' },
-          { id: 3, name: 'Meeting', display_order: 3, is_active: true, color: 'green' }
-        ],
-        'dim_contact_method': [
-          { id: 1, name: 'Email', display_order: 1, is_active: true, color: 'blue' },
-          { id: 2, name: 'Phone', display_order: 2, is_active: true, color: 'green' },
-          { id: 3, name: 'In-Person', display_order: 3, is_active: true, color: 'orange' }
-        ],
-        'dim_contact_type': [
-          { id: 1, name: 'Primary Contact', display_order: 1, is_active: true, color: 'red' },
-          { id: 2, name: 'Decision Maker', display_order: 2, is_active: true, color: 'orange' },
-          { id: 3, name: 'Technical Contact', display_order: 3, is_active: true, color: 'blue' }
-        ],
-        'dim_address_type': [
-          { id: 1, name: 'Business', display_order: 1, is_active: true, color: 'blue' },
-          { id: 2, name: 'Billing', display_order: 2, is_active: true, color: 'green' },
-          { id: 3, name: 'Shipping', display_order: 3, is_active: true, color: 'orange' }
-        ],
-        'dim_file_category': [
-          { id: 1, name: 'Contract', display_order: 1, is_active: true, color: 'blue' },
-          { id: 2, name: 'Proposal', display_order: 2, is_active: true, color: 'green' },
-          { id: 3, name: 'Documentation', display_order: 3, is_active: true, color: 'orange' }
-        ],
-        'dim_industry': [
-          { id: 1, name: 'Healthcare', display_order: 1, is_active: true, color: 'blue' },
-          { id: 2, name: 'Medical Technology', display_order: 2, is_active: true, color: 'green' },
-          { id: 3, name: 'Pharmaceutical', display_order: 3, is_active: true, color: 'orange' }
-        ],
-        'dim_document_type': [
-          { id: 1, name: 'PDF', display_order: 1, is_active: true, color: 'red' },
-          { id: 2, name: 'Word Document', display_order: 2, is_active: true, color: 'blue' },
-          { id: 3, name: 'Excel Spreadsheet', display_order: 3, is_active: true, color: 'green' }
-        ]
-      };
-      
-      if (mockDimensions[tableName]) {
-        return mockDimensions[tableName];
-      }
       
       const { data, error } = await supabase
         .from(tableName)
@@ -424,95 +338,32 @@ class CRMDatabase {
     offset?: number;
   }) {
     return withErrorHandling(async () => {
-      console.log('=== getCompanies called ===');
-      console.log('Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL);
-      console.log('Supabase Key exists:', !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
-      
-      // TEMPORARY: Return mock data while Supabase connection is being fixed
-      console.log('Using mock data due to Supabase connection issues');
-      
-      const mockCompanies: Company[] = [
-        {
-          company_id: 'mock-1',
-          company_name: 'Acme Healthcare Corp',
-          industry: 'Healthcare',
-          company_size: 'Large',
-          annual_revenue: '$10M+',
-          company_website: 'https://acmehealth.com',
-          tin: '12-3456789',
-          company_status: 'lead',
-          lead_source: 'Website',
-          lead_score: 'Hot',
-          expected_close_date: '2024-02-15',
-          immediate_positions: 5,
-          annual_positions: 25,
-          opportunity_value: 500000,
-          position_names: 'Nurses, Doctors, Technicians',
-          position_type: 'Clinical',
-          additional_staffing_details: 'Looking for experienced healthcare professionals',
-          staffing_needs_overview: 'Expanding clinical operations',
-          contact_email: 'contact@acmehealth.com',
-          contact_phone: '+1-555-0123',
-          city: 'New York',
-          state: 'NY',
-          created_date: new Date().toISOString(),
-          updated_date: new Date().toISOString()
-        },
-        {
-          company_id: 'mock-2',
-          company_name: 'MedTech Solutions',
-          industry: 'Medical Technology',
-          company_size: 'Medium',
-          annual_revenue: '$5M-10M',
-          company_website: 'https://medtechsolutions.com',
-          tin: '98-7654321',
-          company_status: 'prospect',
-          lead_source: 'Referral',
-          lead_score: 'Warm',
-          expected_close_date: '2024-03-01',
-          immediate_positions: 3,
-          annual_positions: 15,
-          opportunity_value: 250000,
-          position_names: 'Engineers, Technicians',
-          position_type: 'Technical',
-          additional_staffing_details: 'Need skilled technical staff',
-          staffing_needs_overview: 'Growing technical team',
-          contact_email: 'hr@medtechsolutions.com',
-          contact_phone: '+1-555-0456',
-          city: 'San Francisco',
-          state: 'CA',
-          created_date: new Date().toISOString(),
-          updated_date: new Date().toISOString()
-        }
-      ];
-
-      // Apply filters to mock data
-      let filteredCompanies = mockCompanies;
+      // Use the view if it exists, otherwise use the table
+      let query = supabase
+        .from('companies')
+        .select('*')
+        .order('created_date', { ascending: false });
 
       if (filters?.status) {
-        filteredCompanies = filteredCompanies.filter(company => 
-          company.company_status.toLowerCase() === filters.status?.toLowerCase()
-        );
+        query = query.eq('company_status', filters.status);
       }
 
       if (filters?.search) {
-        const searchTerm = filters.search.toLowerCase();
-        filteredCompanies = filteredCompanies.filter(company =>
-          company.company_name.toLowerCase().includes(searchTerm) ||
-          company.industry?.toLowerCase().includes(searchTerm)
-        );
+        query = query.or(`company_name.ilike.%${filters.search}%,city.ilike.%${filters.search}%,contact_email.ilike.%${filters.search}%`);
       }
 
       if (filters?.limit) {
-        filteredCompanies = filteredCompanies.slice(0, filters.limit);
+        query = query.limit(filters.limit);
       }
 
       if (filters?.offset) {
-        filteredCompanies = filteredCompanies.slice(filters.offset);
+        query = query.range(filters.offset, filters.offset + (filters.limit || 10) - 1);
       }
 
-      console.log('Mock data result:', filteredCompanies);
-      return filteredCompanies;
+      const { data, error } = await query;
+      
+      if (error) throw error;
+      return data as Company[];
     }, 'Failed to fetch companies');
   }
 
@@ -547,7 +398,7 @@ class CRMDatabase {
       // Clean up empty date fields - convert empty strings to null
       const cleanedCompany = { ...company };
       if (cleanedCompany.expected_close_date === '') {
-        cleanedCompany.expected_close_date = undefined;
+        cleanedCompany.expected_close_date = null;
       }
       
       // Add timestamps
@@ -789,7 +640,7 @@ class CRMDatabase {
           note_type_id: noteType.id,
           note_text: note.text,
           follow_up_date: note.follow_up_date || null,
-          follow_up_type: undefined,
+          follow_up_type: note.follow_up_type || null,
           created_date: new Date().toISOString()
         };
       } else {

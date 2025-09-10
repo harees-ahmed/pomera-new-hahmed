@@ -1,4 +1,4 @@
-// File: D:\Git\pomera-new-hahmed\app\ats\page.tsx
+// File: C:\AI-Dev\Projects\Clients\Pomera Care\pomera-new\app\ats\page.tsx
 import * as entry from '../../../../app/ats/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

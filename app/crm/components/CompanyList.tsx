@@ -11,7 +11,6 @@ interface CompanyListProps {
   onViewLead: (company: Company) => void;
   onEditLead: (company: Company) => void;
   dimensions: {
-    statuses: DimensionValue[];
     scores: DimensionValue[];
   };
 }
