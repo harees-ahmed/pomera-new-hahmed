@@ -1,0 +1,97 @@
+name: Codespace Development Environment
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  setup-codespace:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Create devcontainer configuration
+      run: |
+        mkdir -p .devcontainer
+        cat > .devcontainer/devcontainer.json << 'EOF'
+        {
+          "name": "Pomera CRM Development",
+          "image": "mcr.microsoft.com/devcontainers/typescript-node:18",
+          "features": {
+            "ghcr.io/devcontainers/features/git:1": {},
+            "ghcr.io/devcontainers/features/github-cli:1": {}
+          },
+          "forwardPorts": [3000],
+          "postCreateCommand": "npm install",
+          "customizations": {
+            "vscode": {
+              "extensions": [
+                "bradlc.vscode-tailwindcss",
+                "esbenp.prettier-vscode",
+                "ms-vscode.vscode-typescript-next"
+              ]
+            }
+          },
+          "remoteEnv": {
+            "NEXT_PUBLIC_SUPABASE_URL": "${localEnv:NEXT_PUBLIC_SUPABASE_URL}",
+            "NEXT_PUBLIC_SUPABASE_ANON_KEY": "${localEnv:NEXT_PUBLIC_SUPABASE_ANON_KEY}"
+          }
+        }
+        EOF
+        
+    - name: Create startup script
+      run: |
+        cat > start-dev.sh << 'EOF'
+        #!/bin/bash
+        echo "Starting Pomera CRM Development Server..."
+        echo "Installing dependencies..."
+        npm install
+        echo "Starting development server..."
+        npm run dev
+        EOF
+        chmod +x start-dev.sh
+        
+    - name: Create README for Codespace
+      run: |
+        cat > CODESPACE_README.md << 'EOF'
+        # Pomera CRM - Codespace Development
+        
+        ## Quick Start
+        
+        1. Open this repository in GitHub Codespaces
+        2. Run: `./start-dev.sh`
+        3. The development server will start on port 3000
+        4. Access the application via the forwarded port
+        
+        ## Environment Variables
+        
+        Make sure to set these in your Codespace environment:
+        - NEXT_PUBLIC_SUPABASE_URL
+        - NEXT_PUBLIC_SUPABASE_ANON_KEY
+        
+        ## Available Scripts
+        
+        - `npm run dev` - Start development server
+        - `npm run build` - Build for production
+        - `npm run start` - Start production server
+        - `npm run lint` - Run ESLint
+        
+        ## Project Structure
+        
+        - `app/` - Next.js app directory
+        - `components/` - React components
+        - `lib/` - Utility functions and configurations
+        - `database/` - Database schema and documentation
+        EOF

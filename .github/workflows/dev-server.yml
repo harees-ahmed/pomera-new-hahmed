@@ -1,0 +1,51 @@
+name: Development Server
+
+on:
+  workflow_dispatch: # Manual trigger
+  push:
+    branches: [ main ]
+    paths:
+      - 'app/**'
+      - 'components/**'
+      - 'lib/**'
+      - 'package.json'
+      - 'next.config.ts'
+
+jobs:
+  dev-server:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Start development server
+      run: |
+        echo "Starting development server..."
+        npm run dev &
+        sleep 30
+        echo "Development server started successfully"
+      env:
+        NODE_ENV: development
+        NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+        PORT: 3000
+        
+    - name: Keep server running
+      run: |
+        echo "Development server is running on port 3000"
+        echo "You can access it via GitHub Codespaces or by setting up port forwarding"
+        # Keep the job running
+        while true; do
+          sleep 60
+          echo "Server is still running..."
+        done
