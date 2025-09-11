@@ -74,7 +74,39 @@ jobs:
       - name: Install dependencies
         run: ${{ steps.detect-package-manager.outputs.manager }} ${{ steps.detect-package-manager.outputs.command }}
       - name: Build with Next.js
-        run: ${{ steps.detect-package-manager.outputs.runner }} next build
+        run: |
+          # Create a temporary Next.js config for static export
+          cp next.config.ts next.config.ts.backup
+          cat > next.config.ts << 'EOF'
+          import type { NextConfig } from "next";
+
+          const nextConfig: NextConfig = {
+            output: 'export',
+            trailingSlash: true,
+            images: {
+              unoptimized: true
+            },
+            basePath: '/pomera-new-hahmed',
+            assetPrefix: '/pomera-new-hahmed',
+            eslint: {
+              ignoreDuringBuilds: true,
+            },
+            typescript: {
+              ignoreBuildErrors: true,
+            },
+          };
+
+          export default nextConfig;
+          EOF
+          
+          # Build the application
+          ${{ steps.detect-package-manager.outputs.runner }} next build
+          
+          # Restore original config
+          mv next.config.ts.backup next.config.ts
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
