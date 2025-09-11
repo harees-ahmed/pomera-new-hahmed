@@ -84,7 +84,30 @@ export default function SecureFileUpload({
     const validFiles: File[] = [];
 
     Array.from(files).forEach(file => {
-      const error = validateFile(file);
+      // Inline validation logic to avoid dependency issues
+      let error: string | null = null;
+      
+      // Check file size
+      if (file.size > maxFileSize * 1024 * 1024) {
+        error = `File size exceeds ${maxFileSize}MB limit`;
+      }
+
+      // Check file type
+      if (!error && !allowedTypes.includes(file.type)) {
+        error = `File type ${file.type} is not allowed`;
+      }
+
+      // Check for potentially dangerous file extensions
+      if (!error) {
+        const dangerousExtensions = ['.exe', '.bat', '.cmd', '.com', '.pif', '.scr', '.vbs', '.js'];
+        const fileName = file.name.toLowerCase();
+        const hasDangerousExtension = dangerousExtensions.some(ext => fileName.endsWith(ext));
+        
+        if (hasDangerousExtension) {
+          error = 'Executable files are not allowed for security reasons';
+        }
+      }
+
       if (error) {
         errors.push(`${file.name}: ${error}`);
       } else {
@@ -103,7 +126,7 @@ export default function SecureFileUpload({
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
-  }, [onFileUpload, selectedCategory, maxFileSize, allowedTypes, validateFile]);
+  }, [onFileUpload, selectedCategory, maxFileSize, allowedTypes]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
