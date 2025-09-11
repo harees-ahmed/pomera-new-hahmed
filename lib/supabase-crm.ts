@@ -116,28 +116,29 @@ async function withErrorHandling<T>(
   try {
     const data = await operation();
     return data;
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Enhanced error logging for debugging
+    const errorObj = error as any;
     console.error(`${errorMessage}:`, {
       error: error,
-      message: error.message,
-      details: error.details,
-      hint: error.hint,
-      code: error.code,
-      stack: error.stack
+      message: errorObj?.message,
+      details: errorObj?.details,
+      hint: errorObj?.hint,
+      code: errorObj?.code,
+      stack: errorObj?.stack
     });
     
     // Create more descriptive error messages
     let errorMsg = errorMessage;
     if (error && typeof error === 'object') {
-      if (error.message) {
-        errorMsg += `: ${error.message}`;
+      if (errorObj?.message) {
+        errorMsg += `: ${errorObj.message}`;
       }
-      if (error.details) {
-        errorMsg += ` (${error.details})`;
+      if (errorObj?.details) {
+        errorMsg += ` (${errorObj.details})`;
       }
-      if (error.hint) {
-        errorMsg += ` - Hint: ${error.hint}`;
+      if (errorObj?.hint) {
+        errorMsg += ` - Hint: ${errorObj.hint}`;
       }
     } else if (error) {
       errorMsg += `: ${String(error)}`;
