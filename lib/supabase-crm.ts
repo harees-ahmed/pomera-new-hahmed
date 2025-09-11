@@ -118,7 +118,7 @@ async function withErrorHandling<T>(
     return data;
   } catch (error: unknown) {
     // Enhanced error logging for debugging
-    const errorObj = error as any;
+    const errorObj = error as Error & { details?: string; hint?: string; code?: string };
     console.error(`${errorMessage}:`, {
       error: error,
       message: errorObj?.message,
@@ -286,7 +286,7 @@ class CRMDatabase {
   }
 
   // Check table structure for debugging
-  async checkTableStructure(): Promise<any> {
+  async checkTableStructure(): Promise<{ fields: string[]; sample: Record<string, unknown> | null }> {
     return withErrorHandling(async () => {
       // Try a simple query to see what fields exist
       const { data: sampleData, error: sampleError } = await supabase
