@@ -1,20 +1,19 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Enable static export for GitHub Pages
-  output: 'export',
-  trailingSlash: true,
+  // Optimized for Vercel deployment (Node.js runtime)
   images: {
-    unoptimized: true
+    domains: ['localhost', 'harees-ahmed.github.io'],
   },
-  // Configure basePath and assetPrefix for GitHub Pages
-  basePath: process.env.NODE_ENV === 'production' ? '/pomera-new-hahmed' : '',
-  assetPrefix: process.env.NODE_ENV === 'production' ? '/pomera-new-hahmed' : '',
   eslint: {
     ignoreDuringBuilds: true,
   },
   typescript: {
     ignoreBuildErrors: true,
+  },
+  // Enable experimental features for better performance
+  experimental: {
+    serverComponentsExternalPackages: ['@supabase/supabase-js'],
   },
 };
 
